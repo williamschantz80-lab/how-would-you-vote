@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How Would You Have Voted?</title>
+<style>
+  :root{
+    --bg:#0f1115; --card:#181b22; --line:#2a2f3a; --text:#eef0f4; --muted:#9aa3b2;
+    --accent:#f2c14e; --yes:#3fae7a; --no:#d9534f; --chip:#232835;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:680px;margin:0 auto;padding:20px 16px 48px}
+  h1{font-size:28px;line-height:1.2;margin:8px 0 12px}
+  h2{font-size:22px;line-height:1.25;margin:4px 0 6px}
+  h3{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:18px 0 6px}
+  p{margin:0 0 12px}
+  .muted{color:var(--muted)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .chip{display:inline-block;background:var(--chip);color:var(--accent);font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 10px;border-radius:999px;margin-bottom:10px}
+  .meta{font-size:14px;color:var(--muted);margin-bottom:14px}
+  .simple{background:#1f2430;border-left:4px solid var(--accent);padding:12px 14px;border-radius:8px;margin:6px 0 4px}
+  .sides{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+  .side{background:#1c2029;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:15px}
+  .side b{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;color:var(--muted)}
+  @media (max-width:520px){.sides{grid-template-columns:1fr}}
+  .btns{display:flex;gap:12px;margin-top:20px}
+  button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:14px 18px;font-weight:700;font-size:17px}
+  .yes{background:var(--yes);color:#fff;flex:1}
+  .no{background:var(--no);color:#fff;flex:1}
+  .skip{background:transparent;color:var(--muted);font-weight:500;font-size:14px;padding:8px;margin-top:8px;width:100%}
+  .primary{background:var(--accent);color:#1a1a1a;width:100%;margin-top:12px}
+  .ghost{background:var(--chip);color:var(--text);width:100%;margin-top:10px}
+  .progress{height:6px;background:var(--line);border-radius:6px;overflow:hidden;margin:4px 0 16px}
+  .progress div{height:100%;background:var(--accent);width:0;transition:width .25s}
+  .count{font-size:13px;color:var(--muted);margin-bottom:6px}
+  .big{font-size:56px;font-weight:800;color:var(--accent);line-height:1}
+  .stat{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+  .stat .card{padding:14px}
+  .stat .n{font-size:30px;font-weight:800}
+  .stat .big{font-size:42px}
+  table{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px}
+  th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+  .v{font-weight:700}
+  .v.Y{color:var(--yes)} .v.N{color:var(--no)} .v.S{color:var(--muted)}
+  .match{color:var(--accent)}
+  .topicrow{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}
+  .note{font-size:13px;color:var(--muted);margin-top:16px}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- INTRO -->
+  <section id="intro">
+    <span class="chip">Texas House votes · 2019–2025</span>
+    <h1>How would you have voted?</h1>
+    <p>Here are <b>18 real bills</b> the Texas House voted on between 2019 and 2025.</p>
+    <p>For each one you'll see when it was voted on, what the bill did, a plain-English version, and what each side argued. Then tell us how you would have voted: <b>Yes</b> or <b>No</b>.</p>
+    <p class="muted">There are no right or wrong answers. Just vote the way you would if you were a lawmaker. You'll see your results at the end.</p>
+    <button class="primary" onclick="start()">Start</button>
+  </section>
+
+  <!-- QUESTION -->
+  <section id="quiz" class="hidden">
+    <div class="count" id="count"></div>
+    <div class="progress"><div id="bar"></div></div>
+    <div class="card" id="qcard"></div>
+    <div class="btns">
+      <button class="yes" onclick="answer('Y')">Yes</button>
+      <button class="no" onclick="answer('N')">No</button>
+    </div>
+    <button class="skip" onclick="answer('S')">Not sure / skip</button>
+    <button class="skip" id="backBtn" onclick="back()">← Back</button>
+  </section>
+
+  <!-- RESULTS -->
+  <section id="results" class="hidden"></section>
+
+</div>
+
+<script>
+const BILLS = [
+ {id:"HJR 38", topic:"Taxes", session:"86th Legislature, regular session", date:"May 9, 2019",
+  title:"Ban a state income tax in the Texas Constitution",
+  official:"A proposed constitutional amendment prohibiting the state from imposing a tax on the net incomes of individuals.",
+  simple:"Texas has no state income tax. This put a flat ban on one into the state constitution. Before this, the constitution already said voters would have to approve any income tax. This made it a ban instead, so undoing it would need a new constitutional amendment.",
+  pro:"Locks in no state income tax for good. Protects families and businesses from a future legislature changing course.",
+  con:"Not needed, since voters already had to approve any income tax. Takes options away from future lawmakers in a budget crisis.",
+  tal:"N", house:"Passed 100–42", law:"Yes. Voters approved it as Proposition 4 in Nov. 2019.",
+  his:"He has called the amendment \"duplicative\" of protections already in the constitution.",
+  rv:"House Journal, RV 1243"},
+
+ {id:"HB 6", topic:"Crime", session:"88th Legislature, regular session", date:"April 28, 2023",
+  title:"Fentanyl deaths can be charged as murder",
+  official:"Relating to the punishment for manufacturing or delivering fentanyl when a person dies as a result, and to listing fentanyl poisoning on death certificates.",
+  simple:"If someone makes or sells fentanyl and a person dies from taking it, the seller can be charged with murder. Death certificates also have to say when fentanyl caused the death.",
+  pro:"Holds dealers responsible for deaths they cause. A tougher penalty may scare people away from selling fentanyl.",
+  con:"Many sellers don't know a drug is laced. It could hit low-level user-sellers hardest and make people afraid to call 911.",
+  tal:"N", house:"Passed 124–21", law:"Yes",
+  rv:"House Journal, RV 683"},
+
+ {id:"HB 800", topic:"Crime", session:"88th Legislature, regular session", date:"May 10, 2023",
+  title:"Tougher penalties for human smuggling and stash houses",
+  official:"Relating to increasing the criminal penalties for smuggling of persons and for operating a stash house.",
+  simple:"This raised the punishment for smuggling people into or through Texas and for running houses where smuggled people are kept, including longer minimum prison time.",
+  pro:"Smuggling is a big business for cartels. Longer sentences mean a bigger deterrent.",
+  con:"Mandatory minimum sentences take discretion away from judges. It could sweep in relatives or people helping for humanitarian reasons.",
+  tal:"N", house:"Passed 94–52", law:"No. It died before becoming law.",
+  rv:"House Journal, RV 1414"},
+
+ {id:"HB 4635", topic:"Crime", session:"88th Legislature, regular session", date:"May 28, 2023 (final version)",
+  title:"Racketeering law aimed at transnational gangs",
+  official:"Relating to the prosecution of organized criminal activity, including offenses committed by transnational and criminal street gangs.",
+  simple:"This widened Texas's organized-crime law so prosecutors can go after a whole gang or cartel network, not just one person for one crime.",
+  pro:"Cartels and gangs work as organizations, so prosecutors need tools to take down the whole operation.",
+  con:"Broad organized-crime laws can pull in people on the edges of a group and pile on charges.",
+  tal:"N", house:"Passed 105–35", law:"Yes",
+  rv:"House Journal, RV 2228"},
+
+ {id:"SB 1900", topic:"Crime", session:"88th Legislature, regular session", date:"May 22, 2023",
+  title:"State powers against foreign terrorist organizations, written to target Mexican cartels",
+  official:"Relating to the designation of certain organizations as foreign terrorist organizations and to criminal offenses involving those organizations.",
+  simple:"This let Texas treat certain groups, written with Mexican drug cartels in mind, as terrorist organizations under state law. That brings tougher charges for helping them.",
+  pro:"Cartels act like terrorist groups. The state should have strong tools if Washington won't act.",
+  con:"Terrorism is mostly a federal matter. The labels and charges could be broad or vague.",
+  tal:"N", house:"Passed 93–51", law:"Yes",
+  rv:"House Journal, RV 1931"},
+
+ {id:"SB 1484", topic:"Crime", session:"88th Legislature, regular session", date:"May 6, 2023",
+  title:"Training local police to fight cartel and border crime",
+  official:"Relating to a training program for local law enforcement on border security operations.",
+  simple:"This created a state training program to teach local police and sheriffs how to deal with cartel activity and crime connected to the border.",
+  pro:"Local officers are often the first to run into smuggling and cartel crime, so they should be trained for it.",
+  con:"It pulls local police further into border and immigration enforcement, which is the federal government's job.",
+  tal:"N", house:"Passed 96–40", law:"Yes",
+  rv:"House Journal, RV 1223"},
+
+ {id:"HB 4843", topic:"Crime", session:"88th Legislature, regular session", date:"May 5, 2023",
+  title:"Felon caught with a gun: second-degree felony instead of third",
+  official:"Relating to the punishment for unlawful possession of a firearm by a felon and minimum terms for certain firearm offenses.",
+  simple:"It's already illegal for a convicted felon to have a gun. This raised the crime one level (from 3rd- to 2nd-degree felony), which means more possible prison time, and added minimum sentences for some gun crimes.",
+  pro:"Felons with guns are a major driver of violent crime. Tougher sentences keep them off the street longer.",
+  con:"Mandatory minimums and longer sentences are costly. (Some gun-rights Republicans also voted no.)",
+  tal:"N", house:"Passed 103–35", law:"No. It died before becoming law.",
+  rv:"House Journal, RV 1083 (also RV 1046)"},
+
+ {id:"HB 9", topic:"Border", session:"87th Legislature, 2nd called session", date:"August 30, 2021",
+  title:"$1.8 billion for border security, including barriers",
+  official:"Making supplemental appropriations for border security, including border barrier construction and law enforcement operations.",
+  simple:"This gave about $1.8 billion in extra state money for the border. That included about $750 million toward building a border barrier, plus money for state police, the National Guard and local law enforcement.",
+  pro:"The federal government wasn't securing the border, so Texas had to step in.",
+  con:"The border is a federal responsibility. It's a lot of taxpayer money, and walls don't work well.",
+  tal:"N", house:"Passed 85–36", law:"Yes",
+  rv:"House Journal, RV 93"},
+
+ {id:"SB 4", topic:"Border", session:"88th Legislature, 4th called session", date:"November 14, 2023",
+  title:"Illegal entry made a state crime",
+  official:"Relating to illegal entry into this state, illegal presence, and orders to return to a foreign nation; creating criminal offenses.",
+  simple:"Crossing into Texas illegally from another country became a state crime. Texas police could arrest people for it, and state judges could order them to go back to Mexico.",
+  pro:"Gives Texas its own tools to stop illegal crossings when the federal government won't.",
+  con:"Immigration is federal law. Critics also worried about racial profiling and conflict with Mexico. It was challenged in federal court.",
+  tal:"N", house:"Passed 83–61", law:"Signed Dec. 2023 and challenged in federal court",
+  rv:"House Journal, RV 48"},
+
+ {id:"HJR 34", topic:"Border", session:"89th Legislature, regular session", date:"May 5, 2025",
+  title:"Tax break for border-security improvements in border counties",
+  official:"A proposed constitutional amendment authorizing a property tax exemption for border security infrastructure in border counties.",
+  simple:"If a landowner in a border county puts up something like a wall or barrier on their property, it wouldn't raise their property taxes.",
+  pro:"Landowners shouldn't be taxed more for helping secure the border.",
+  con:"It narrows the tax base for local governments. (It drew little opposition.)",
+  tal:"Y", house:"Passed 116–20", law:"Yes. Voters approved it as Proposition 17 in Nov. 2025.",
+  rv:"House Journal, RV 1380"},
+
+ {id:"HB 2308", topic:"Border", session:"89th Legislature, regular session", date:"May 14, 2025",
+  title:"Advisory border-security commission",
+  official:"Relating to the creation of the Texas Commission on Border Security and Illegal Immigration.",
+  simple:"This would have created a state panel to study border security and illegal immigration and recommend ideas. It advises only and has no power to act.",
+  pro:"Gets better information and coordination on border policy.",
+  con:"Another government commission that can't actually do anything.",
+  tal:"Y", house:"Passed 94–47", law:"No. It died in the Senate.",
+  rv:"House Journal, RV 2470"},
+
+ {id:"SB 8", topic:"Border", session:"89th Legislature, regular session", date:"June 1, 2025",
+  title:"Sheriffs must seek agreements with ICE",
+  official:"Relating to requiring certain sheriffs to request and enter into agreements with U.S. Immigration and Customs Enforcement (287(g) agreements).",
+  simple:"Many county sheriffs have to ask ICE for a partnership called a \"287(g)\" agreement. That lets local deputies do some immigration-enforcement work, like checking the immigration status of people in jail.",
+  pro:"Makes sure people here illegally who are arrested for crimes get handed over to ICE.",
+  con:"Takes the decision away from local communities. Critics say it can make immigrants afraid to report crimes and adds costs for counties.",
+  tal:"N", house:"Passed 89–52", law:"Yes",
+  rv:"House Journal, RV 4130"},
+
+ {id:"HB 192", topic:"Police funding", session:"89th Legislature, 2nd called session", date:"August 27, 2025",
+  title:"Tighter limits on cutting police funding in the largest county",
+  official:"Relating to limits on reductions in law enforcement funding by certain populous counties.",
+  simple:"This adds stricter rules that stop the state's biggest county from cutting its spending on sheriffs, constables and police.",
+  pro:"Protects public safety from \"defund the police\" budget cuts.",
+  con:"The state is overriding local budget decisions made by locally elected officials.",
+  tal:"N", house:"Passed 89–48", law:"Yes",
+  rv:"House Journal, RV 105"},
+
+ {id:"HB 25", topic:"Gender & sports", session:"87th Legislature, 3rd called session", date:"October 17, 2021",
+  title:"Public-school sports teams by biological sex",
+  official:"Relating to requiring public school students to compete in interscholastic athletic competitions based on biological sex, with certain exceptions.",
+  simple:"Students in public schools (K–12) have to play on the sports team that matches their sex at birth. Girls could still play on boys' teams if no girls' team exists.",
+  pro:"Keeps girls' sports fair and safe.",
+  con:"Excludes transgender kids from sports with their friends. It affects very few students.",
+  tal:"N", house:"Passed 76–61 (final vote on Senate changes)", law:"Yes",
+  rv:"House Journal, RV 138"},
+
+ {id:"SB 15", topic:"Gender & sports", session:"88th Legislature, regular session", date:"May 18, 2023",
+  title:"Public-college sports teams by biological sex",
+  official:"Relating to requiring college athletes to compete based on biological sex, with certain exceptions.",
+  simple:"Same idea as the school sports bill, but for public colleges and universities. Women's teams are for athletes who were female at birth.",
+  pro:"Protects fairness and scholarships in women's college sports.",
+  con:"Excludes transgender athletes. Critics said college athletic groups already have their own rules.",
+  tal:"N", house:"Passed 95–50", law:"Yes",
+  rv:"House Journal, RV 1813"},
+
+ {id:"SB 14", topic:"Gender & sports", session:"88th Legislature, regular session", date:"May 15, 2023",
+  title:"Ban on gender-transition treatment for minors",
+  official:"Relating to prohibitions on the provision to certain children of procedures and treatments for gender transitioning.",
+  simple:"Doctors in Texas can't give anyone under 18 gender-transition surgery, puberty blockers or cross-sex hormones.",
+  pro:"Kids are too young to make permanent medical decisions like these.",
+  con:"Parents and doctors should make medical decisions, not the government. Major medical groups support access to this care.",
+  tal:"N", house:"Passed 87–56", law:"Yes",
+  his:"He has said he backed an amendment to limit the bill to banning surgeries for minors. That amendment failed.",
+  rv:"House Journal, RV 1688 (3rd reading; also RV 1686)"},
+
+ {id:"HB 229", topic:"Gender & sports", session:"89th Legislature, regular session", date:"May 12, 2025",
+  title:"Defines male and female in state law",
+  official:"Relating to defining biological sex for purposes of state law. The bill says \"each individual is one of two sexes, male or female.\"",
+  simple:"Texas law now defines \"male\" and \"female\" by biology at birth, and state records and data use those definitions.",
+  pro:"Gives clear, consistent definitions across state law.",
+  con:"Erases recognition of transgender and intersex people in state records.",
+  tal:"N", house:"Passed 87–56", law:"Yes",
+  rv:"House Journal, RV 2177"},
+
+ {id:"SB 17", topic:"Foreign land", session:"89th Legislature, regular session", date:"May 9, 2025",
+  title:"Bars hostile foreign governments and their companies from buying Texas land",
+  official:"Relating to the purchase or acquisition of real property by certain foreign individuals, governments and entities tied to designated countries.",
+  simple:"Governments and companies tied to China, Iran, North Korea and Russia, and some of their citizens, can't buy land in Texas. U.S. citizens and lawful permanent residents are exempt.",
+  pro:"Protects farmland, infrastructure and military bases from hostile foreign governments.",
+  con:"Critics said it could discriminate against immigrants and Asian Americans, and that federal law already reviews risky foreign purchases.",
+  tal:"N", house:"Passed 86–59", law:"Yes",
+  rv:"House Journal, RV 1881"}
+];
+
+let i = 0;
+const ans = new Array(BILLS.length).fill(null);
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function start(){ $('intro').classList.add('hidden'); $('quiz').classList.remove('hidden'); render(); }
+
+function render(){
+  const b = BILLS[i];
+  $('count').textContent = `Bill ${i+1} of ${BILLS.length} · ${b.topic}`;
+  $('bar').style.width = (i / BILLS.length * 100) + '%';
+  $('backBtn').style.visibility = i ? 'visible' : 'hidden';
+  $('qcard').innerHTML = `
+    <span class="chip">${esc(b.id)}</span>
+    <h2>${esc(b.title)}</h2>
+    <div class="meta">House vote: ${esc(b.date)}<br>${esc(b.session)}</div>
+    <h3>What the bill says</h3>
+    <p>${esc(b.official)}</p>
+    <h3>In plain English</h3>
+    <div class="simple">${esc(b.simple)}</div>
+    <h3>What each side argued</h3>
+    <div class="sides">
+      <div class="side"><b>Supporters said</b>${esc(b.pro)}</div>
+      <div class="side"><b>Opponents said</b>${esc(b.con)}</div>
+    </div>
+    <h3>Would you vote Yes or No?</h3>`;
+  window.scrollTo(0,0);
+}
+
+function answer(v){
+  ans[i] = v;
+  if (i < BILLS.length - 1){ i++; render(); } else { results(); }
+}
+function back(){ if (i > 0){ i--; render(); } }
+
+const word = v => v === 'Y' ? 'Yes' : v === 'N' ? 'No' : 'Skipped';
+
+function results(){
+  $('quiz').classList.add('hidden');
+  const answered = BILLS.map((b,k)=>({b, v:ans[k]})).filter(x => x.v !== 'S');
+  const withT = answered.filter(x => x.v === x.b.tal).length;
+  const withH = answered.filter(x => x.v === 'Y').length; // every vote listed passed the House
+  const n = answered.length;
+  const pct = x => n ? Math.round(x / n * 100) : 0;
+
+  const topics = [...new Set(BILLS.map(b => b.topic))];
+  const topicRows = topics.map(t => {
+    const a = answered.filter(x => x.b.topic === t);
+    const m = a.filter(x => x.v === x.b.tal).length;
+    return `<div class="topicrow"><span>${t}</span><span>${a.length ? `agreed on ${m} of ${a.length}` : '—'}</span></div>`;
+  }).join('');
+
+  const rows = BILLS.map((b,k) => {
+    const v = ans[k];
+    const same = v !== 'S' && v === b.tal;
+    return `<tr>
+      <td><b>${esc(b.id)}</b><br><span class="muted">${esc(b.title)}<br>${esc(b.date)}</span></td>
+      <td class="v ${v}">${word(v)}</td>
+      <td class="v ${b.tal}">${word(b.tal)}${same ? ' <span class="match">●</span>' : ''}</td>
+      <td class="muted">${esc(b.house)}<br>Law: ${esc(b.law)}</td>
+    </tr>`;
+  }).join('');
+
+  const notes = BILLS.filter(b => b.his).map(b => `<p class="note"><b>${esc(b.id)}:</b> ${esc(b.his)}</p>`).join('');
+
+  $('results').innerHTML = `
+    <span class="chip">Your results</span>
+    <h1>How your votes compare to James Talarico's</h1>
+    <p class="muted">James Talarico was a Texas state representative from 2019 to 2025 and is now running for U.S. Senate. He voted on all 18 of these bills.</p>
+    <div class="stat">
+      <div class="card"><div class="big">${pct(withT)}%</div><div class="muted" style="margin-top:6px">voted the <b>same</b> as Talarico<br>(${withT} of ${n})</div></div>
+      <div class="card"><div class="big" style="color:var(--no)">${pct(n - withT)}%</div><div class="muted" style="margin-top:6px">voted the <b>opposite</b> of Talarico<br>(${n - withT} of ${n})</div></div>
+    </div>
+    ${n < BILLS.length ? `<p class="muted">${BILLS.length - n} skipped, so they aren't counted.</p>` : ''}
+    <p class="muted">You also voted the same as the Texas House majority on <b>${withH} of ${n}</b>. The House passed all 18 of these bills.</p>
+    <h3>By topic</h3>
+    ${topicRows}
+    <h3>Bill by bill</h3>
+    <div style="overflow-x:auto"><table>
+      <tr><th>Bill</th><th>You</th><th>Talarico</th><th>Outcome</th></tr>
+      ${rows}
+    </table></div>
+    <p class="note"><span class="match">●</span> means you and Talarico voted the same way.</p>
+    ${notes}
+    <h3>What about Ken Paxton?</h3>
+    <p class="muted">Ken Paxton, the Republican nominee, left the Texas Legislature in January 2015 and has been Attorney General since. He had no vote on any of these bills, so there's no head-to-head voting record to compare.</p>
+    <h3>Sources</h3>
+    <p class="note">Talarico's votes and House tallies come from the official Texas House Journal record votes listed for each bill below, cross-checked against LegiScan and FastDemocracy roll calls. His comments come from PolitiFact (Sept. 2026) and FactCheck.org. "Supporters / opponents said" summarizes arguments made in public debate and isn't an endorsement of either side.</p>
+    <p class="note">${BILLS.map(b => `${esc(b.id)} (${esc(b.date)}): ${esc(b.rv)}`).join(' · ')}</p>
+    <button class="primary" onclick="location.reload()">Take it again</button>`;
+  $('results').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+</script>
+</body>
+</html>
